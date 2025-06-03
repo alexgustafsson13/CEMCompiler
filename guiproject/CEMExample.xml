@@ -1,0 +1,65 @@
+<CEM>
+ <Cause Name="casue1" Op="Direct" Description="insignal 1 (bool)">
+  <Inputs>
+   <InSignal Name="in1" Type="Bool"/>
+  </Inputs>
+ </Cause>
+ <Cause Name="cause2" Op="Direct" Description="insignal 2 (bool)">
+  <Inputs>
+   <InSignal Name="in2" Type="Bool"/>
+  </Inputs>
+ </Cause>
+ <Cause Name="cause3" Op="LT" Description="insignal 3 Lesser Than 5 (ints)">
+  <Inputs>
+   <InSignal Name="in3" Type="Int"/>
+   <Constant Type="Int" Value="5"/>
+  </Inputs>
+ </Cause>
+ <Cause Name="cause4" Op="And" Description="insignal 4 AND insignal 5 (bools)">
+  <Inputs>
+   <InSignal Name="in4" Type="Bool"/>
+   <InSignal Name="in5" Type="Bool"/>
+  </Inputs>
+ </Cause>
+ <Cause Name="cause5" Op="GE" Description="insignal 6 GreaterOrEqualsTO insignal 7 (ints)">
+  <Inputs>
+   <InSignal Name="in6" Type="Int"/>
+   <InSignal Name="in7" Type="Int"/>
+  </Inputs>
+ </Cause>
+ <Effect Name="effect1" Op="Direct" Description="outsignal 1">
+  <OutSignal Name="out1" Type="Bool"/>
+ </Effect>
+ <Effect Name="effect2" Op="Direct" Description="outsignal 2">
+  <OutSignal Name="out2" Type="Bool"/>
+ </Effect>
+ <Effect Name="effect3" Op="Direct" Description="outsignal 3">
+  <OutSignal Name="out3" Type="Bool"/>
+ </Effect>
+ <Effect Name="effec4" Op="TP" Description="outsignal 4 with 5sec pulse">
+  <Timer Type="TP" Value="T#5s"/>
+  <OutSignal Name="out4" Type="Bool"/>
+ </Effect>
+ <Effect Name="effect5" Op="TOf" Description="outsignal 5 with 1min OffDelay">
+  <Timer Type="TOf" Value="T#1m"/>
+  <OutSignal Name="out5" Type="Bool"/>
+ </Effect>
+ <Intersection CauseRef="casue1" EffectRef="effect1" Op="2A"/>
+ <Intersection CauseRef="casue1" EffectRef="effect2" Op="S"/>
+ <Intersection CauseRef="casue1" EffectRef="effect3" Op="3S"/>
+ <Intersection CauseRef="casue1" EffectRef="effec4" Op="A"/>
+ <Intersection CauseRef="cause2" EffectRef="effect1" Op="2A"/>
+ <Intersection CauseRef="cause2" EffectRef="effect2" Op="R"/>
+ <Intersection CauseRef="cause2" EffectRef="effect3" Op="3S"/>
+ <Intersection CauseRef="cause2" EffectRef="effec4" Op="NA"/>
+ <Intersection CauseRef="cause3" EffectRef="effect1" Op="2A"/>
+ <Intersection CauseRef="cause3" EffectRef="effect2" Op="A"/>
+ <Intersection CauseRef="cause3" EffectRef="effect3" Op="3S"/>
+ <Intersection CauseRef="cause3" EffectRef="effec4" Op="2A"/>
+ <Intersection CauseRef="cause4" EffectRef="effect1" Op="A"/>
+ <Intersection CauseRef="cause4" EffectRef="effect2" Op="A"/>
+ <Intersection CauseRef="cause4" EffectRef="effect3" Op="R"/>
+ <Intersection CauseRef="cause4" EffectRef="effec4" Op="2NA"/>
+ <Intersection CauseRef="cause5" EffectRef="effect3" Op="A"/>
+ <Intersection CauseRef="cause5" EffectRef="effect5" Op="A"/>
+</CEM>
