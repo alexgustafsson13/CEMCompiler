@@ -1,0 +1,44 @@
+//---------------------------------------------------------------------------//
+// CEM Entry                                                                 //
+//---------------------------------------------------------------------------//
+<CEMSTATE> TOKEN : /* RESERVED WORDS */
+{
+    < CEMROOT           : "CEM" >
+  | < CAUSE             : "Cause">
+  | < EFFECT            : "Effect">
+  | < INTERSECTION      : "Intersection">
+  | < INPUTS            : "Inputs" >
+  | < CEM_CONSTANT      : "Constant" >
+  | < INSIGNAL          : "InSignal" >
+  | < OUTSIGNAL         : "OutSignal" >
+  | < CEM_TIMER         : "Timer" >
+  | < CEM_BIND          : "="   >
+  | < CEM_LT            : "<"   >
+  | < CEM_GT            : ">"   >
+  | < CEM_SLASH         : "/"   >
+  | < CEM_END_TAG       : <CEM_LT> <CEM_SLASH> >
+  | < CEM_END_LINE_TAG  : <CEM_SLASH> <CEM_GT> >
+} // RESERVED WORDS
+
+<CEMSTATE> TOKEN :
+{
+    < #CEM_LETTER: ["a"-"z", "_"] >
+  | < #CEM_LETTER_NUMERIC: ["a"-"z", "_", "0"-"9"] >
+  | < CEM_ID: <CEM_LETTER> (<CEM_LETTER_NUMERIC>)* >
+}
+
+<CEMSTATE> SKIP :
+{
+    < "\"" > : CEMSTRINGSTATE
+}
+
+<CEMSTRINGSTATE> SKIP :
+{
+    < "\"" > : CEMSTATE
+  | < <WHITESPACE> >
+}
+
+<CEMSTRINGSTATE> TOKEN :
+{
+    < CEM_STRING: (~["\""])+ >
+}

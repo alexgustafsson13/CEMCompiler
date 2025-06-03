@@ -1,0 +1,53 @@
+aspect CEMWarnings {
+
+    syn boolean CEMCause.containsOnlyConstants() {
+        int total = getNumInputs();
+        int constants = 0;
+        if (hasInputBlock()) {
+            for (var input : getInputs()) {
+                if (input.isConstant()) {
+                    constants += 1;
+                }
+            }
+        }
+        return (total == constants) && hasInput();
+    }
+
+    // Most cases another configuration option is prefered.
+    CEMCause contributes error(676977, uniqueName() + ": This cause is redundant. All inputs found are constants, is this really what you want?")
+    when hasInputBlock() && containsOnlyConstants()
+    to JSonRecord.warnings() for _root;
+
+    
+    inh boolean CEMElement.isUsed();
+    eq CEMRoot.getCEMElement(int i).isUsed() {
+        if (getCEMElement(i).isCause()) {
+            if (allCauseRefs().contains(getCEMElement(i))) return true;
+            return false;
+        } else if (getCEMElement(i).isEffect()) {
+            if (allEffectRefs().contains(getCEMElement(i))) return true;
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    syn ArrayList<CEMCause> CEMRoot.allCauseRefs() {
+        var list = new ArrayList<CEMCause>();
+        for (var inter : intersectionList()) {
+            list.add(inter.causeRef());
+        }
+        return list;
+    }
+    syn ArrayList<CEMEffect> CEMRoot.allEffectRefs() {
+        var list = new ArrayList<CEMEffect>();
+        for (var inter : intersectionList()) {
+            list.add(inter.effectRef());
+        }
+        return list;
+    }
+
+    CEMElement contributes error(676977, uniqueName() + ": This "+ (isEffect() ? "effect" : "cause") +" is unused")
+    when !isUsed()
+    to JSonRecord.warnings() for _root;
+}

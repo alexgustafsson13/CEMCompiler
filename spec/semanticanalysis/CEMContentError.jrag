@@ -1,0 +1,167 @@
+aspect CauseContentError {
+
+    syn boolean CEMInput.isConstant() = false;
+    syn boolean CEMInput.isInsignal() = false;
+    eq CEMConstant.isConstant() = true;
+    eq CEMInSignal.isInsignal() = true;
+
+    syn boolean CEMCauseElement.isInputBlock() = false;
+    eq CEMInputBlock.isInputBlock() = true;
+    syn CEMInputBlock CEMCause.getInputBlock() {
+        for (CEMCauseElement elem : getCEMCauseElements()) {
+            if (elem.isInputBlock()) return (CEMInputBlock) elem;
+        }
+        return null;
+    }
+    syn boolean CEMCause.hasInputBlock() = getInputBlock() != null;
+
+    syn List<CEMInput> CEMCause.getInputs() {
+        CEMInputBlock block = getInputBlock();
+        if (block != null) {
+            return block.getCEMInputs();
+        }
+        return new List<CEMInput>();
+    }
+    
+    syn int CEMCause.getNumInputs() = getInputs() != null ? getInputs().getNumChild() : 0;
+
+    syn boolean CEMCause.hasInput() {
+        List<CEMInput> inputs = getInputs();
+        if (inputs != null) {
+            return inputs.getNumChild() > 0;
+        }
+        return false;
+    }
+
+    syn boolean CEMCause.hasBinaryOp() = hasAttr("Op") && binaryOps().contains(getAttr("Op"));
+
+    syn TreeSet<String> CEMCause.binaryOps() = new TreeSet<String>() {
+        {
+            addAll(booleanOps());
+            addAll(comparatorOps());
+        }
+    };
+
+    CEMCause contributes error(676977, uniqueName() + ": missing InputBlock.")
+    when !hasInputBlock()
+    to JSonRecord.errors() for _root;
+
+    CEMCause contributes error(676977, uniqueName() + ": Incorrect number of InSignals for Op=\"" + getAttr("Op") + "\". Expected: 1, but was: " + getNumInputs())
+    when (hasInputBlock() && hasAttr("Op") && getAttr("Op").equals("Direct") && getNumInputs() != 1)
+    to JSonRecord.errors() for _root;
+
+    CEMCause contributes error(676977, uniqueName() + ": Incorrect number of InSignals for Op=\"" + getAttr("Op") + "\". Expected: 2, but was: " + getNumInputs())
+    when (hasInputBlock() && hasBinaryOp() && (getNumInputs() != 2))
+    to JSonRecord.errors() for _root;
+}
+
+aspect EffectContentError {
+    syn boolean CEMEffectElement.isOutSignal() = false;
+    eq CEMOutSignal.isOutSignal() = true;
+
+    syn int CEMEffect.nbrOfOutSignals() {
+        int outSignalNbr = 0;
+        for (CEMEffectElement elem : getCEMEffectElements()) {
+            if (elem.isOutSignal()) outSignalNbr += 1;
+        }
+        return outSignalNbr;
+    }
+
+    syn boolean CEMEffect.hasReset() {
+        for (CEMIntersection intersect : intersectionList()) {
+            if (intersect.hasAttr("Op") && intersect.getAttr("Op").contains("R")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    syn boolean CEMEffect.hasSet() {
+        for (CEMIntersection intersect : intersectionList()) {
+            if (intersect.hasAttr("Op") && intersect.getAttr("Op").contains("S")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    CEMEffect contributes error (676977, uniqueName() +  ": Effect needs intersections to both set and reset Causes. Missing: " + (hasReset() ? "Set" : "Reset"))
+    when hasReset() ^ hasSet()
+    to JSonRecord.errors() for _root;
+
+    CEMEffect contributes error(676977, uniqueName() + ": effects need to have 1 OutSignal(s) but has - " + nbrOfOutSignals())
+    when (nbrOfOutSignals() != 1)
+    to JSonRecord.errors() for _root;
+}
+
+aspect operationtypes {
+    // insignal types allowed when using a comparator op
+    syn Set<String> CEMCause.validComparatorTypes() = new TreeSet<String>(Arrays.asList(
+        "int"
+    ));
+    // insignal types allowed when using a boolean op
+    syn Set<String> CEMCause.validBoolTypes() = new TreeSet<String>(Arrays.asList(
+        "bool"
+    ));
+
+    syn boolean CEMCause.compatibleTypes() {
+        if (hasAttr("Op") && isBoolOp()) {
+            for (CEMInput in : getInputs()) {
+                if (in.hasAttr("Type")) {
+                    if (!validBoolTypes().contains(in.getAttr("Type").toLowerCase())) {
+                        return false;
+                    }
+                }
+            }
+        } else if (hasAttr("Op") && isComparatorOp()) {
+            for (CEMInput in : getInputs()) {
+                if (in.hasAttr("Type")) {
+                    if (!validComparatorTypes().contains(in.getAttr("Type").toLowerCase())) {
+                        return false;
+                    }
+                }
+            }
+        } else if (hasAttr("Op") && isDirectOp()) {
+            for (CEMInput in : getInputs()) {
+                if (in.hasAttr("Type")) {
+                    if (!validBoolTypes().contains(in.getAttr("Type").toLowerCase())) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    syn boolean CEMCause.isBoolOp() = booleanOps().contains(getAttr("Op"));
+    syn boolean CEMCause.isComparatorOp() = comparatorOps().contains(getAttr("Op"));
+    syn boolean CEMCause.isDirectOp() = getAttr("Op").equals("Direct");
+
+    CEMCause contributes error(676977, uniqueName() + ": has incompatible insignal types. Expected: " + (isBoolOp() ? "Bool" : "Numerical"))
+    when !compatibleTypes()
+    to JSonRecord.errors() for _root;
+}
+
+aspect ceminsignals {
+
+    coll ArrayList<CEMInSignal> CEMRoot.insignals() [new ArrayList<>()] with add root CEMRoot;
+
+    CEMInSignal contributes this
+    to CEMRoot.insignals();
+    
+    CEMRoot contributes error(676977, "Insignal(s) with the names: " + duplInsignals().toString() + " are duplicates with different types which is not allowed.")
+    when (!duplInsignals().isEmpty())
+    to JSonRecord.errors() for _root;
+
+    syn ArrayList<String> CEMRoot.duplInsignals() {
+        ArrayList<String> names = new ArrayList<String>();
+        for (int i = 0; i < insignals().size();i++) {
+            for (int j = i + 1; j < insignals().size();j++) {
+                if (insignals().get(i).getAttr("Name").equals(insignals().get(j).getAttr("Name")) && !insignals().get(i).getAttr("Type").equals(insignals().get(j).getAttr("Type"))) {
+                    names.add(insignals().get(i).getAttr("Name"));
+                }
+            }
+        }
+        return names;
+    }
+}

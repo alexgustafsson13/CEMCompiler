@@ -1,0 +1,42 @@
+aspect UniqueNames {
+  inh int CEMElement.index();
+  eq CEMRoot.getCEMElement(int i).index() = i;
+
+  
+  syn String CEMAttributed.uniqueName();
+  syn String CEMRoot.uniqueName() = "root";
+  eq CEMCause.uniqueName() {
+    /*if (hasAttr("Name")) {
+      return getAttr("Name");
+    }*/
+    return index() + "cause";
+  }  
+  eq CEMEffect.uniqueName() {
+    /*if (hasAttr("Name")) {
+      return getAttr("Name");
+    }*/
+    return index() + "effect";
+  } 
+  eq CEMIntersection.uniqueName() {
+   /* if (hasAttr("CauseRef") && hasAttr("EffectRef")) {
+      return "intersection_of_" + getAttr("CauseRef") + "_and_" + getAttr("EffectRef");
+    }*/
+      return index() + "intersection";
+  }
+  inh String CEMCauseElement.parentName();
+  inh String CEMEffectElement.parentName();
+  eq CEMCause.getCEMCauseElement(int i).parentName() = uniqueName() + "_" + i;
+  eq CEMEffect.getCEMEffectElement(int i).parentName() = uniqueName() + "_" + i;
+
+  syn String CEMConstant.uniqueName() = parentName() + "constant";
+  syn String CEMInSignal.uniqueName() = parentName() + "insignal";
+  syn String CEMOutSignal.uniqueName() = parentName() + "outsignal";
+  syn String CEMTimer.uniqueName() = parentName() + "timer";
+  inh String CEMInput.parentName();
+  eq CEMInputBlock.getCEMInput(int i).parentName() = parentName() + "input_" + i ;
+
+
+  inh String CEMAttribute.uniqueName();
+  eq CEMAttributed.getCEMAttribute(int i).uniqueName() = uniqueName() + "attr_" + i;
+  
+}

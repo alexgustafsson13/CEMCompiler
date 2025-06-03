@@ -1,0 +1,124 @@
+//---------------------------------------------------------------------------//
+// CEM Entry                                                                 //
+//---------------------------------------------------------------------------//
+
+CodeBlockCEM codeBlockCEM() #CodeBlockCEM : {}
+{
+  CEMRoot()
+  <EOF>
+  {
+    return jjtThis;
+  }
+}
+
+void CEMRoot() #CEMRoot: {}
+{
+  <CEM_LT> <CEMROOT> CEMAttributes() 
+  (
+    <CEM_END_LINE_TAG>
+  | <CEM_GT> CEMElements() <CEM_END_TAG> <CEMROOT> <CEM_GT>
+  )
+}
+
+void CEMElements() #List: {}
+{
+  ( <CEM_LT> 
+    ( Cause()
+    | Effect()
+    | Intersection()
+    )
+  )*
+}
+
+void Cause() #CEMCause: {}
+{
+  <CAUSE> CEMAttributes() 
+  ( <CEM_END_LINE_TAG>
+  | <CEM_GT> CauseElements() <CEM_END_TAG> <CAUSE> <CEM_GT>
+  )*
+}
+
+void Effect() #CEMEffect: {}
+{
+  <EFFECT> CEMAttributes() 
+  ( <CEM_END_LINE_TAG>
+  | <CEM_GT> EffectElements() <CEM_END_TAG> <EFFECT> <CEM_GT>
+  )*
+}
+
+void Intersection() #CEMIntersection: {}
+{
+  <INTERSECTION> CEMAttributes() <CEM_END_LINE_TAG>
+}
+
+void CEMAttributes() #List: {}
+{
+  (CEMAttribute())*
+}
+
+void CEMAttribute() #CEMAttribute: {}
+{
+  CEMID() <CEM_BIND> CEMSTRING()
+}
+
+void CauseElements() #List: {}
+{
+  (InputBlock())*
+}
+
+void EffectElements() #List: {}
+{
+  ( <CEM_LT>
+    ( OutSignal()
+    | Timer()
+    )
+  )*
+}
+
+void InputBlock() #CEMInputBlock: {}
+{
+  <CEM_LT> <INPUTS> <CEM_GT>
+  Inputs()
+  <CEM_END_TAG> <INPUTS> <CEM_GT>
+}
+
+void Inputs() #List: {}
+{
+  ( <CEM_LT>
+    ( CEMConstant()
+    | InSignal()
+    )
+  )*
+}
+
+void CEMConstant() #CEMConstant: {}
+{
+  <CEM_CONSTANT> CEMAttributes() <CEM_END_LINE_TAG>
+}
+
+void InSignal() #CEMInSignal: {}
+{
+  <INSIGNAL> CEMAttributes() <CEM_END_LINE_TAG>
+}
+
+void Timer() #CEMTimer: {}
+{
+  <CEM_TIMER> CEMAttributes() <CEM_END_LINE_TAG>
+}
+
+void OutSignal() #CEMOutSignal: {}
+{
+  <OUTSIGNAL> CEMAttributes() <CEM_END_LINE_TAG>
+}
+
+void CEMSTRING() #CEMSTRING: { Token t;}
+{
+  t = <CEM_STRING>
+  {jjtThis.setCEM_STRING(t.image);}
+}
+
+void CEMID() #CEMID: { Token t; }
+{
+  t = <CEM_ID>
+  {jjtThis.setCEM_ID(t.image);}
+}

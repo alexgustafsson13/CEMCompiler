@@ -1,0 +1,378 @@
+aspect CEMAttributeError {
+  syn Map<String,String> CEMAttributed.attributeMap() {
+    HashMap<String,String> map = new HashMap();
+    for (var att : getCEMAttributes()) {
+        map.put(att.getKey().getCEM_ID(),att.getValueString());
+    }
+    return map;
+  }
+
+  syn String CEMAttributed.getAttr(String key) {
+    return attributeMap().get(key);
+  }
+
+  syn boolean CEMAttributed.hasAttr(String key) {
+    return attributeMap().containsKey(key);
+  }
+
+  CEMCause contributes error(676977, uniqueName() + " is missing the attribute Name")
+  when (!hasAttr("Name"))
+  to JSonRecord.errors() for _root;
+
+  CEMEffect contributes error(676977, uniqueName() + " is missing the attribute Name")
+  when (!hasAttr("Name"))
+  to JSonRecord.errors() for _root;
+
+  CEMInput contributes error(676977, uniqueName() + " is missing the attribute Type")
+  when (!hasAttr("Type"))
+  to JSonRecord.errors() for _root;
+
+  CEMConstant contributes error(676977, uniqueName() + " is missing the attribute Value")
+  when (!hasAttr("Value"))
+  to JSonRecord.errors() for _root;
+
+  CEMInSignal contributes error(676977, uniqueName() + " is missing the attribute Name")
+  when (!hasAttr("Name"))
+  to JSonRecord.errors() for _root;
+
+  CEMTimer contributes error(676977, uniqueName() + " is missing the attribute Type")
+  when (!hasAttr("Type"))
+  to JSonRecord.errors() for _root;
+
+  CEMTimer contributes error(676977, uniqueName() + " is missing the attribute Value")
+  when (!hasAttr("Value"))
+  to JSonRecord.errors() for _root;
+
+  CEMElement contributes error(676977, uniqueName() + " is missing the attribute Op")
+  when (!hasAttr("Op"))
+  to JSonRecord.errors() for _root;
+
+  CEMIntersection contributes error(676977, uniqueName() + " is missing the attribute CauseRef")
+  when (!hasAttr("CauseRef"))
+  to JSonRecord.errors() for _root;
+
+  CEMIntersection contributes error(676977, uniqueName() + " is missing the attribute EffectRef")
+  when (!hasAttr("EffectRef"))
+  to JSonRecord.errors() for _root;
+  
+  syn Set<String> CEMAttributed.validAttributes();
+  eq CEMCause.validAttributes() = new TreeSet<String>(Arrays.asList(
+    "Name",
+    "Op",
+    "Description"
+    ));
+
+
+  eq CEMEffect.validAttributes() = new TreeSet<String>(Arrays.asList(
+    "Name",
+    "Op",
+    "Description"
+    ));
+
+  eq CEMIntersection.validAttributes() = new TreeSet<String>(Arrays.asList(
+    "CauseRef",
+    "EffectRef",
+    "Op"
+    ));
+
+  syn Set<String> CEMConstant.validAttributes() = new TreeSet<String>(Arrays.asList(
+    "Type",
+    "Value"
+    ));
+
+  syn Set<String> CEMInSignal.validAttributes() = new TreeSet<String>(Arrays.asList(
+    "Name",
+    "Type"
+    ));
+
+  syn Set<String> CEMRoot.validAttributes() = new TreeSet<String>(Arrays.asList(
+    "Name"
+    ));
+  
+  syn Set<String> CEMOutSignal.validAttributes() = new TreeSet<String>(Arrays.asList(
+    "Name",
+    "Type"
+    ));
+  
+  syn Set<String> CEMTimer.validAttributes() = new TreeSet<String>(Arrays.asList(
+    "Type",
+    "Value"
+    ));
+
+  inh Set<String> CEMAttribute.validAttributes();
+  eq CEMAttributed.getCEMAttribute().validAttributes() = validAttributes();
+
+  inh boolean CEMAttribute.isInvalid();
+  eq CEMAttributed.getCEMAttribute(int i).isInvalid() = !validAttributes().contains(getCEMAttribute(i).getKey().getCEM_ID());
+
+  CEMAttribute contributes error(676977, uniqueName() + ": invalid attribute \"" + getKey().getCEM_ID() + "\"")
+  when (isInvalid())
+  to JSonRecord.errors() for _root;
+}
+
+aspect duplicateerrors {
+  // Checks for duplicates
+
+  inh boolean CEMElement.isDuplicate();
+  eq CEMRoot.getCEMElement(int i).isDuplicate() {
+    if (getCEMElement(i).isCause() && getCEMElement(i).hasAttr("Name")) {
+      return isDuplicateCause(getCEMElement(i).getAttr("Name"));
+    } else if (getCEMElement(i).isEffect() && getCEMElement(i).hasAttr("Name")) {
+      return isDuplicateEffect(getCEMElement(i).getAttr("Name"));
+    } else if (getCEMElement(i).isIntersection() && getCEMElement(i).hasAttr("CauseRef") && getCEMElement(i).hasAttr("EffectRef")) {
+      return isDuplicateIntersection(getCEMElement(i).getAttr("CauseRef"), getCEMElement(i).getAttr("EffectRef"));
+    } else {
+      return false;
+    }
+  }
+
+  syn boolean CEMRoot.isDuplicateCause(String name) {
+    int i = 0;
+    for (CEMCause cause : causeList()) {
+      if (cause.hasAttr("Name")) {
+        if (cause.getAttr("Name").equals(name)) i++;
+      }
+    }
+    if (i > 1) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+
+  syn boolean CEMRoot.isDuplicateEffect(String name) {
+    int i = 0;
+    for (CEMEffect effect : effectList()) {
+      if (effect.hasAttr("Name")) {
+        if (effect.getAttr("Name").equals(name)) i++;
+      }
+    }
+    if (i > 1) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+
+  syn boolean CEMRoot.isDuplicateIntersection(String causeref, String effectref) {
+    int i = 0;
+    for (CEMIntersection intersect : intersectionList()) {
+      if (intersect.hasAttr("CauseRef") && intersect.hasAttr("EffectRef")) {
+        if (intersect.getAttr("CauseRef").equals(causeref) && intersect.getAttr("EffectRef").equals(effectref)) i++;
+      }
+    }
+    if (i > 1) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+
+  CEMCause contributes error(676977, uniqueName() + ": A Cause with name \"" + getAttr("Name") + "\" is already declared (Causes must have unique names)")
+  when (isDuplicate())
+  to JSonRecord.errors() for _root;
+
+  CEMEffect contributes error(676977, uniqueName() + ": An Effect with name \"" + getAttr("Name") + "\" is already declared (Effects must have unique names)")
+  when (isDuplicate())
+  to JSonRecord.errors() for _root;
+
+  CEMIntersection contributes error(676977, uniqueName() + ": An Intersection with CauseRef=\"" + getAttr("CauseRef") + "\" and EffectRef=\"" +  getAttr("EffectRef") + "\" is already declared (Intersections must be unique)")
+  when (isDuplicate())
+  to JSonRecord.errors() for _root;
+}
+
+aspect operations {
+  inh boolean CEMAttribute.isValidOp();
+  syn Set<String> CEMAttributed.validOps() = new TreeSet<String>();
+  syn boolean CEMAttributed.hasValidOp() {
+    if (hasAttr("Op")) {
+      return validOps().contains(getAttr("Op"));
+    }
+    return false;
+  }
+  eq CEMCause.validOps() = new TreeSet<String>() { 
+    { 
+        add("Direct");
+        addAll(booleanOps()); 
+        addAll(comparatorOps()); 
+    } 
+  }; 
+  syn Set<String> CEMCause.booleanOps() = new TreeSet<String>(Arrays.asList(
+    "And",
+    "Or",
+    "Xor"
+  ));
+  syn Set<String> CEMCause.comparatorOps() = new TreeSet<String>(Arrays.asList(
+    "EQ",
+    "GE",
+    "GT",
+    "LE",
+    "LT",
+    "NEQ"
+  ));
+  eq CEMEffect.validOps() = new TreeSet<String>(Arrays.asList(
+    "Direct",
+    "TOn",
+    "TOf",
+    "TP"
+  ));
+
+  syn Pattern CEMIntersection.validOpsPattern() = Pattern.compile(
+    "^((?:[1-9]\\d*)?)(N?)([RSA])$"
+  );
+
+  eq CEMIntersection.hasValidOp() {
+    if (hasAttr("Op")) {
+      Matcher matcher = validOpsPattern().matcher(getAttr("Op"));
+      return matcher.matches();
+    }
+    return false;
+  }
+
+  eq CEMAttributed.getCEMAttribute().isValidOp() = hasValidOp();
+
+  syn boolean CEMAttribute.isOp() = getKey().getCEM_ID().toLowerCase().equals("op");
+
+  CEMAttribute contributes error(676977, uniqueName() + ": invalid Op \"" + getValueString() + "\"")
+  when (isOp() && !isInvalid() && !isValidOp())
+  to JSonRecord.errors() for _root;
+
+  syn boolean CEMIntersection.hasNot() {
+    if (hasAttr("Op")) {
+      return getAttr("Op").contains("N");
+    }
+    return false;
+  }
+
+  syn String CEMAttribute.getValueString() = getValue().getCEM_STRING();
+}
+
+aspect outsignaltypes {
+  CEMOutSignal contributes error(676977, uniqueName() + ": Outsignal needs to be of type Bool")
+  when hasAttr("Type") && !getAttr("Type").toLowerCase().equals("bool")
+  to JSonRecord.errors() for _root;
+}
+
+aspect timers {
+  CEMTimer contributes error(676977, uniqueName() + ": Type is not recognized")
+  when hasAttr("Type") && !validTimerTypes().contains(getAttr("Type"))
+  to JSonRecord.errors() for _root;
+
+  syn Set<String> CEMTimer.validTimerTypes() = new TreeSet<String>(Arrays.asList(
+    "TOf",
+    "TOn",
+    "TP"
+  ));
+
+  CEMTimer contributes error(676977, uniqueName() + ": Value is not in a TimeLiteral format")
+  when hasAttr("Value") && !TimeLiteral.isTimeLiteralMatch(getAttr("Value"))
+  to JSonRecord.errors() for _root;
+
+  CEMEffect contributes error(676977, uniqueName() + ": Only 1 Timer per effect allowed")
+  when (hasMultipleTimers())
+  to JSonRecord.errors() for _root;
+  
+  syn boolean CEMEffect.hasMultipleTimers() {
+    boolean alreadyHasTimer = false;
+    for (CEMEffectElement elem : getCEMEffectElements()) {
+      if (elem.isTimer() && alreadyHasTimer) return true;
+      else if (elem.isTimer()) alreadyHasTimer = true;
+    }
+    return false;
+  }
+
+}
+
+aspect Voting {
+  syn HashMap<Integer, ArrayList<CEMIntersection>> CEMEffect.assignOpMap() {
+    HashMap<Integer, ArrayList<CEMIntersection>> map = new HashMap<Integer, ArrayList<CEMIntersection>>();
+    for (CEMIntersection intersect : intersectionList()) {
+      Matcher matcher = intersect.validOpsPattern().matcher(intersect.getAttr("Op"));
+      if (matcher.matches()) {
+        int number = (matcher.group(1) != "") ? Integer.parseInt(matcher.group(1)) : 1;
+        var op = matcher.group(3);
+        if (op.equals("A")) {
+            ArrayList<CEMIntersection> current = map.getOrDefault(number, new ArrayList<CEMIntersection>());
+            current.add(intersect);
+            map.put(number, current);
+        }
+      }
+    }
+    return map;
+  }
+  
+  syn HashMap<Integer, ArrayList<CEMIntersection>> CEMEffect.setOpMap() {
+    HashMap<Integer, ArrayList<CEMIntersection>> map = new HashMap<Integer, ArrayList<CEMIntersection>>();
+    for (CEMIntersection intersect : intersectionList()) {
+      Matcher matcher = intersect.validOpsPattern().matcher(intersect.getAttr("Op"));
+      if (matcher.matches()) {
+        int number = (matcher.group(1) != "") ? Integer.parseInt(matcher.group(1)) : 1;
+        var op = matcher.group(3);
+        if (op.equals("S")) {
+            ArrayList<CEMIntersection> current = map.getOrDefault(number, new ArrayList<CEMIntersection>());
+            current.add(intersect);
+            map.put(number, current);
+        }
+      }
+    }
+    return map;
+  }
+
+  syn HashMap<Integer, ArrayList<CEMIntersection>> CEMEffect.resetOpMap() {
+    HashMap<Integer, ArrayList<CEMIntersection>> map = new HashMap<Integer, ArrayList<CEMIntersection>>();
+    for (CEMIntersection intersect : intersectionList()) {
+      Matcher matcher = intersect.validOpsPattern().matcher(intersect.getAttr("Op"));
+      if (matcher.matches()) {
+        int number = (matcher.group(1) != "") ? Integer.parseInt(matcher.group(1)) : 1;
+        var op = matcher.group(3);
+        if (op.equals("R")) {
+            ArrayList<CEMIntersection> current = map.getOrDefault(number, new ArrayList<CEMIntersection>());
+            current.add(intersect);
+            map.put(number, current);
+        }
+      }
+    }
+    return map;
+  }
+
+  CEMIntersection contributes error(676977, uniqueName() + ": This intersection with Op=" + getAttr("Op") + " has too few members in its voting group. Expected at least " + votingGroup() + " members.")
+  when effectRef() != null && hasValidOp() && !hasValidVotingGroup()
+  to JSonRecord.errors() for _root;
+
+  syn int CEMIntersection.votingGroup() {
+    if (hasAttr("Op")) {
+      var matcher = validOpsPattern().matcher(getAttr("Op"));
+      if (matcher.matches()) {
+        return matcher.group(1) != "" ? Integer.parseInt(matcher.group(1)) : 1;
+      }
+    }
+    return 1;
+  }
+
+  syn boolean CEMIntersection.hasValidVotingGroup() {
+    CEMEffect effect = effectRef();
+    if (!hasAttr("Op")) {
+      return false;
+    }
+    if (getAttr("Op").contains("R")) {
+      var map = effect.resetOpMap();
+      if (map.get(votingGroup()).size() >= votingGroup()) {
+        return true;
+      }
+    } else if (getAttr("Op").contains("S")) {
+      var map = effect.setOpMap();
+      if (map.get(votingGroup()).size() >= votingGroup()) {
+        return true;
+      }
+    } else if (getAttr("Op").contains("A")) {
+      var map = effect.assignOpMap();
+      if (map.get(votingGroup()).size() >= votingGroup()) {
+        return true;
+      }
+    }
+    return false;
+  }
+}

@@ -1,0 +1,30 @@
+//---------------------------------------------------------------------------//
+// CEM Entry                                                                 //
+//---------------------------------------------------------------------------//
+
+CodeBlockCEM : Code ::= CEMRoot [CEMCompiler];
+CEMCompiler ::= Statement*;
+
+CEMRoot : CEMAttributed ::= CEMElement*;
+
+abstract CEMAttributed ::= CEMAttribute*;
+abstract CEMElement : CEMAttributed;
+abstract CEMCauseElement;
+abstract CEMEffectElement : CEMAttributed;
+abstract CEMInput : CEMAttributed;
+
+CEMAttribute   ::= Key:CEMID Value:CEMSTRING;
+
+CEMCause         : CEMElement    ::= CEMCauseElement*;
+CEMEffect        : CEMElement    ::= CEMEffectElement*;
+CEMIntersection  : CEMElement;
+
+CEMInputBlock    : CEMCauseElement  ::= CEMInput*;
+
+CEMConstant      : CEMInput;
+CEMInSignal      : CEMInput;
+CEMOutSignal     : CEMEffectElement;
+CEMTimer         : CEMEffectElement;
+
+CEMID     ::= <CEM_ID>;
+CEMSTRING ::= <CEM_STRING>;

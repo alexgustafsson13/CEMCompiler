@@ -1,0 +1,98 @@
+aspect CEMReferenceError {
+
+    syn boolean CEMElement.isCause() = false;
+    syn boolean CEMElement.isEffect() = false;
+    syn boolean CEMElement.isIntersection() = false;
+    eq CEMCause.isCause() = true;
+    eq CEMEffect.isEffect() = true;
+    eq CEMIntersection.isIntersection() = true;
+    
+    syn ArrayList<CEMCause> CEMRoot.causeList() {
+        ArrayList<CEMCause> list = new ArrayList<CEMCause>();
+        for (CEMElement elem : getCEMElements()) {
+            if (elem.isCause()) {
+                list.add((CEMCause) elem);
+            }
+        }
+        return list;
+    }
+    
+    syn ArrayList<CEMEffect> CEMRoot.effectList() {
+        ArrayList<CEMEffect> list = new ArrayList<CEMEffect>();
+        for (CEMElement elem : getCEMElements()) {
+            if (elem.isEffect()) {
+                list.add((CEMEffect) elem);
+            }
+        }
+        return list;
+    }
+    
+    syn ArrayList<CEMIntersection> CEMRoot.intersectionList() {
+        ArrayList<CEMIntersection> list = new ArrayList<CEMIntersection>();
+        for (CEMElement elem : getCEMElements()) {
+            if (elem.isIntersection()) {
+                list.add((CEMIntersection) elem);
+            }
+        }
+        return list;
+    }
+
+    inh ArrayList<CEMIntersection> CEMElement.intersectionList();
+
+    eq CEMRoot.getCEMElement(int index).intersectionList() {
+        ArrayList<CEMIntersection> intersections = new ArrayList<CEMIntersection>();
+        CEMElement elem = getCEMElement(index);
+        if (elem.isEffect()) {
+            CEMEffect effect = (CEMEffect) elem;
+            for (CEMIntersection intersect : intersectionList()) {
+                if (intersect.effectRef() == effect) {
+                    intersections.add(intersect);
+                }
+            }
+        }
+        return intersections;
+    }
+
+
+    inh CEMCause CEMIntersection.causeRef();
+    inh CEMEffect CEMIntersection.effectRef();
+
+    eq CEMRoot.getCEMElement(int index).causeRef() {
+        CEMIntersection intersect = (CEMIntersection) getCEMElement(index);
+        if (intersect.hasAttr("CauseRef")) {
+            String causeName = intersect.getAttr("CauseRef");
+            for (CEMCause cause : causeList()) {
+                if (cause.hasAttr("Name")) {
+                    if (cause.getAttr("Name").equals(causeName)) {
+                        return cause;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    eq CEMRoot.getCEMElement(int index).effectRef() {
+        CEMIntersection intersect = (CEMIntersection) getCEMElement(index);
+        if (intersect.hasAttr("EffectRef")) {
+            String effectName = intersect.getAttr("EffectRef");
+            for (CEMEffect effect : effectList()) {
+                if (effect.hasAttr("Name")){
+                    if (effect.getAttr("Name").equals(effectName)) {
+                        return effect;
+                    }
+                }
+            }
+        }
+        return null;   
+    }
+
+    CEMIntersection contributes error(676977, uniqueName() + ": CauseRef \""+ getAttr("CauseRef") +"\" not valid")
+    when (causeRef() == null && hasAttr("CauseRef"))
+    to JSonRecord.errors() for _root;
+
+    CEMIntersection contributes error(676977, uniqueName() + ": EffectRef \""+ getAttr("EffectRef") +"\" not valid")
+    when (effectRef() == null && hasAttr("EffectRef"))
+    to JSonRecord.errors() for _root;
+
+}
